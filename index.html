@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PAKISTAN TV</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <style>
+        :root { --bg-color: #f8f9fa; --text-color: #212529; --card-bg: #ffffff; }
+        [data-bs-theme="dark"] { --bg-color: #121212; --text-color: #e0e0e0; --card-bg: #1e1e1e; }
+        
+        body { background-color: var(--bg-color); color: var(--text-color); transition: 0.3s; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .navbar { border-bottom: 1px solid rgba(0,0,0,0.1); }
+        
+        /* Category Header Grid */
+        .category-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; padding: 15px; }
+        
+        /* Fixed Size News Cards */
+        .news-card { height: 100%; border: none; background: var(--card-bg); transition: transform 0.2s; box-shadow: 0 4px 12px rgba(0,0,0,0.05); cursor: pointer; }
+        .news-card:hover { transform: translateY(-5px); }
+        .thumb-box { height: 200px; overflow: hidden; position: relative; }
+        .thumb-box img { width: 100%; height: 100%; object-fit: cover; }
+        .badge-cat { position: absolute; top: 10px; left: 10px; }
+        
+        .view-section { display: none; padding-top: 20px; }
+        .view-active { display: block; animation: fadeIn 0.4s; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        .trending-section { background: rgba(0,0,0,0.02); padding: 20px 0; margin-bottom: 30px; border-radius: 12px; }
+        .gallery-img { width: 100%; height: 150px; object-fit: cover; border-radius: 8px; cursor: pointer; }
+    </style>
+</head>
+<body data-bs-theme="light">
+
+<nav class="navbar navbar-expand-lg bg-body-tertiary sticky-top">
+    <div class="container">
+        <a class="navbar-brand fw-bold" href="#" onclick="showSection('home')">🌐 PAKISTAN TV</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navContent">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navContent">
+            <div class="category-grid w-100 d-lg-flex justify-content-center" id="header-categories">
+                </div>
+            <div class="d-flex align-items-center">
+                <button class="btn btn-link text-body p-2" onclick="toggleTheme()"><i class="bi bi-moon-stars-fill"></i></button>
+                <button class="btn btn-dark btn-sm ms-2" onclick="showSection('login')">Admin</button>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<main id="home" class="view-section view-active container">
+    <div id="trending-container" class="trending-section px-3">
+        <h5 class="fw-bold mb-3 text-danger"><i class="bi bi-graph-up-arrow"></i> TRENDING NOW</h5>
+        <div class="row g-3" id="trending-posts"></div>
+    </div>
+    <div class="row g-4" id="main-feed"></div>
+</main>
+
+<section id="post-detail" class="view-section container">
+    <button class="btn btn-outline-secondary mb-3" onclick="showSection('home')">← Back</button>
+    <div id="post-content"></div>
+</section>
+
+<section id="login" class="view-section container">
+    <div class="row justify-content-center mt-5">
+        <div class="col-md-4 card p-4 shadow-sm">
+            <h4 class="text-center mb-4">Admin Login</h4>
+            <input type="text" id="user" class="form-control mb-3" placeholder="Username (newschannel)">
+            <input type="password" id="pass" class="form-control mb-3" placeholder="Password (news1122)">
+            <button class="btn btn-primary w-100" onclick="handleLogin()">Access Panel</button>
+        </div>
+    </div>
+</section>
+
+<section id="admin" class="view-section container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3>Admin Dashboard</h3>
+        <button class="btn btn-danger btn-sm" onclick="logout()">Logout</button>
+    </div>
+    <div class="row">
+        <div class="col-md-4 mb-4">
+            <div class="card p-3 h-100">
+                <h5>Manage Categories</h5>
+                <div class="input-group mb-3">
+                    <input type="text" id="new-cat" class="form-control" placeholder="New Category">
+                    <button class="btn btn-success" onclick="addCategory()">Add</button>
+                </div>
+                <div id="admin-cat-list" class="list-group list-group-flush"></div>
+            </div>
+        </div>
+        <div class="col-md-8">
+            <div class="card p-3 mb-4">
+                <h5>Create New Post</h5>
+                <div class="row g-3">
+                    <div class="col-md-8"><input type="text" id="post-title" class="form-control" placeholder="Title"></div>
+                    <div class="col-md-4"><select id="post-cat-select" class="form-select"></select></div>
+                    <div class="col-12"><textarea id="post-desc" class="form-control" rows="3" placeholder="Content..."></textarea></div>
+                    <div class="col-md-6">
+                        <label class="small fw-bold">Main Thumbnail (Required)</label>
+                        <input type="file" id="post-thumb" class="form-control" accept="image/*">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="small fw-bold">Extra Gallery (Optional)</label>
+                        <input type="file" id="post-gallery" class="form-control" multiple accept="image/*">
+                    </div>
+                    <div class="col-12">
+                        <label class="small fw-bold">Video File (Optional - Preview Only)</label>
+                        <input type="file" id="post-video" class="form-control" accept="video/*">
+                    </div>
+                    <div class="col-12"><button class="btn btn-primary w-100" onclick="createPost()">Publish News</button></div>
+                </div>
+            </div>
+            <div id="admin-post-list" class="row g-3"></div>
+        </div>
+    </div>
+</section>
+
+<script>
+    // --- DATABASE / STATE ---
+    let state = {
+        posts: JSON.parse(localStorage.getItem('news_posts')) || [
+            { id: 1, title: "Tech Revolution: The Future of AI", desc: "Artificial Intelligence is transforming industries...", cat: "Tech", thumb: "https://images.unsplash.com/photo-1485827404703-89b55fcc595e", views: 102, gallery: [], video: null },
+            { id: 2, title: "Global Sports: Finals Results", desc: "The underdog team took home the trophy last night...", cat: "Sports", thumb: "https://images.unsplash.com/photo-1504450758481-7338eba7524a", views: 85, gallery: [], video: null }
+        ],
+        cats: JSON.parse(localStorage.getItem('news_cats')) || ["World", "Tech", "Sports"],
+        currentView: 'home'
+    };
+
+    function sync() {
+        localStorage.setItem('news_posts', JSON.stringify(state.posts));
+        localStorage.setItem('news_cats', JSON.stringify(state.cats));
+        render();
+    }
+
+    // --- NAVIGATION ---
+    function showSection(id, postId = null) {
+        document.querySelectorAll('.view-section').forEach(s => s.classList.remove('view-active'));
+        document.getElementById(id).classList.add('view-active');
+        if (id === 'post-detail') renderDetail(postId);
+        window.scrollTo(0, 0);
+    }
+
+    function toggleTheme() {
+        const body = document.body;
+        const current = body.getAttribute('data-bs-theme');
+        body.setAttribute('data-bs-theme', current === 'dark' ? 'light' : 'dark');
+    }
+
+    // --- AUTH ---
+    function handleLogin() {
+        if (document.getElementById('user').value === 'newschannel' && document.getElementById('pass').value === 'news1122') {
+            showSection('admin');
+        } else { alert("Invalid Credentials"); }
+    }
+    function logout() { showSection('home'); }
+
+    // --- ADMIN ACTIONS ---
+    function addCategory() {
+        const val = document.getElementById('new-cat').value.trim();
+        if (val && !state.cats.includes(val)) {
+            state.cats.push(val);
+            document.getElementById('new-cat').value = "";
+            sync();
+        }
+    }
+
+    function deleteCategory(cat) {
+        state.cats = state.cats.filter(c => c !== cat);
+        sync();
+    }
+
+    async function createPost() {
+        const title = document.getElementById('post-title').value;
+        const cat = document.getElementById('post-cat-select').value;
+        const desc = document.getElementById('post-desc').value;
+        const thumbFile = document.getElementById('post-thumb').files[0];
+        
+        if (!title || !thumbFile) return alert("Title and Thumbnail are required!");
+
+        const thumbBase64 = await toBase64(thumbFile);
+        const galleryFiles = document.getElementById('post-gallery').files;
+        const gallery = [];
+        for (let f of galleryFiles) gallery.push(await toBase64(f));
+
+        const videoFile = document.getElementById('post-video').files[0];
+        const videoURL = videoFile ? URL.createObjectURL(videoFile) : null;
+
+        state.posts.unshift({ id: Date.now(), title, desc, cat, thumb: thumbBase64, views: 0, gallery, video: videoURL });
+        sync();
+        alert("Post Published!");
+    }
+
+    function deletePost(id) {
+        state.posts = state.posts.filter(p => p.id !== id);
+        sync();
+    }
+
+    const toBase64 = file => new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = error => reject(error);
+    });
+
+    // --- RENDERING ---
+    function render() {
+        // Header Categories
+        const catHtml = state.cats.map(c => `<a href="#" class="nav-link px-3 py-1 small fw-bold text-uppercase" onclick="filterByCat('${c}')">${c}</a>`).join('');
+        document.getElementById('header-categories').innerHTML = `<a href="#" class="nav-link px-3 py-1 small fw-bold text-uppercase" onclick="showSection('home')">All</a>` + catHtml;
+
+        // Admin Categories
+        document.getElementById('admin-cat-list').innerHTML = state.cats.map(c => `
+            <div class="list-group-item d-flex justify-content-between align-items-center">${c} 
+                <button class="btn btn-sm text-danger" onclick="deleteCategory('${c}')"><i class="bi bi-trash"></i></button>
+            </div>`).join('');
+        
+        // Admin Select & Admin Post List
+        document.getElementById('post-cat-select').innerHTML = state.cats.map(c => `<option>${c}</option>`).join('');
+        document.getElementById('admin-post-list').innerHTML = state.posts.map(p => `
+            <div class="col-12 d-flex align-items-center bg-body-tertiary p-2 rounded border">
+                <img src="${p.thumb}" style="width:50px; height:50px; object-fit:cover;" class="rounded me-3">
+                <div class="flex-grow-1"><div class="small fw-bold">${p.title}</div><div class="extra-small text-muted">${p.cat}</div></div>
+                <button class="btn btn-sm btn-outline-danger" onclick="deletePost(${p.id})"><i class="bi bi-trash"></i></button>
+            </div>`).join('');
+
+        // Main Feed
+        renderFeed(state.posts);
+
+        // Trending
+        const trending = [...state.posts].sort((a,b) => b.views - a.views).slice(0, 3);
+        document.getElementById('trending-posts').innerHTML = trending.map(p => `
+            <div class="col-md-4" onclick="showSection('post-detail', ${p.id})">
+                <div class="d-flex align-items-center bg-body p-2 rounded shadow-sm border h-100" style="cursor:pointer">
+                    <img src="${p.thumb}" style="width:60px; height:60px; object-fit:cover;" class="rounded me-3">
+                    <div><div class="fw-bold small">${p.title}</div><div class="text-muted" style="font-size:10px;">${p.views} views</div></div>
+                </div>
+            </div>`).join('');
+    }
+
+    function renderFeed(postsArray) {
+        document.getElementById('main-feed').innerHTML = postsArray.map(p => `
+            <div class="col-md-4 col-sm-6">
+                <div class="card news-card shadow-sm" onclick="showSection('post-detail', ${p.id})">
+                    <div class="thumb-box">
+                        <img src="${p.thumb}" alt="news">
+                        <span class="badge bg-danger badge-cat">${p.cat}</span>
+                    </div>
+                    <div class="card-body">
+                        <h6 class="card-title fw-bold">${p.title}</h6>
+                        <p class="card-text text-muted small">${p.desc.substring(0, 80)}...</p>
+                        <div class="d-flex justify-content-between align-items-center mt-3">
+                            <span class="text-muted small"><i class="bi bi-eye"></i> ${p.views}</span>
+                            <span class="btn btn-sm btn-link p-0 text-decoration-none fw-bold">Read More →</span>
+                        </div>
+                    </div>
+                </div>
+            </div>`).join('');
+    }
+
+    function filterByCat(cat) {
+        showSection('home');
+        const filtered = state.posts.filter(p => p.cat === cat);
+        renderFeed(filtered);
+    }
+
+    function renderDetail(id) {
+        const post = state.posts.find(p => p.id === id);
+        if(!post) return;
+        post.views++;
+        sync();
+
+        document.getElementById('post-content').innerHTML = `
+            <h1 class="fw-bold mb-3">${post.title}</h1>
+            <div class="mb-3"><span class="badge bg-primary">${post.cat}</span> <span class="text-muted ms-2">${post.views} views</span></div>
+            <img src="${post.thumb}" class="img-fluid rounded mb-4 w-100" style="max-height:500px; object-fit:cover;">
+            <p class="lead mb-4">${post.desc}</p>
+            ${post.video ? `<div class="mb-4 text-center"><video controls class="w-100 rounded shadow"><source src="${post.video}" type="video/mp4"></video></div>` : ''}
+            <div class="row g-2 mb-5">
+                ${post.gallery.map(img => `<div class="col-4 col-md-2"><img src="${img}" class="gallery-img shadow-sm"></div>`).join('')}
+            </div>
+        `;
+    }
+
+    // Initial Load
+    render();
+</script>
+
+</body>
+</html>
